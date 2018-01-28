@@ -6,24 +6,13 @@ class Vector {
   }
   
   plus(obj) {
-    try {
-      if (!Vector.prototype.isPrototypeOf(obj)) {
-        throw 'Можно прибавлять к вектору только вектор типа Vector';
-      }
-    	let newVector = new Vector(this.x, this.y);
-      newVector.x += obj.x;
-      newVector.y += obj.y;
-      return newVector;
-    } catch (err) {
-    	console.log(err);
-      return obj;
+    if (!Vector.prototype.isPrototypeOf(obj)) {
+      throw new Error('Можно прибавлять к вектору только вектор типа Vector');
     }
+    return new Vector(this.x + obj.x, this.y + obj.y);
   }
   
   times(factor = 1) {
-    let newVector = new Vector(this.x, this.y);
-    newVector.x *= factor;
-    newVector.y *= factor;
-    return newVector;
+    return new Vector(this.x * factor, this.y * factor);
   }
 }
