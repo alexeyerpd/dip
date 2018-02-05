@@ -291,31 +291,20 @@ class Level {
 }
 
 class LevelParser {
-  constructor(dictionary) {
+  constructor(dictionary = {}) {
     this.dictionary = dictionary;
   }
 
   actorFromSymbol(symbol) { 
-    if (typeof symbol === 'undefined' || typeof this.dictionary === 'undefined') {
-      return undefined;
-    }
-    
     if (this.dictionary[symbol]) {
       return this.dictionary[symbol];
-    } else {
-      return undefined;
-    }
+    } 
   }
 
   obstacleFromSymbol(symbol) {
-    if (typeof symbol === 'undefined') {
-      return undefined;
-    }
-    
     switch (symbol) {
       case "x" : return 'wall';
       case "!" : return 'lava';
-      default: return undefined;
     }
   }
 
@@ -331,9 +320,6 @@ class LevelParser {
   }
 
   createActors(stringArray) {
-    if (typeof stringArray === 'undefined') {
-      return [];
-    }
     let act = [];
 
     for (let i = 0; i < stringArray.length; i++) { // i = y
@@ -341,15 +327,71 @@ class LevelParser {
 
         let Check = this.actorFromSymbol(stringArray[i][j]);
 
-        if (Check === Actor) {  
+        if (Check === Actor && typeof Check === 'function') {  
           act.push(new Check(new Vector(j, i)));
-        } else if (Check instanceof Actor) {
+        } else if (Check === stringArray[i][j]) {
           act.push(Check);
+        } else if (Check && typeof Check === 'function') {
+            let test = new Check(new Vector(j, i));
+            if (test instanceof Actor) {
+              act.push(test);
+            }
         }
       }
     }
     return act;
   }
+
+  parse(stringArray) {
+    let grid = this.createGrid(stringArray);
+    let actor = this.createActors(stringArray);
+    return new Level(grid, actor);
+  }
+
+}
+
+class Fireball extends Actor {
+  constructor(coordinates = new Vector(0,0), speed = new Vector(0,0)) {
+    super(coordinates, new Vector(1,1), speed);
+  }
+  
+  get type() {
+    return 'fireball';
+  }
+  
+  getNextPosition(time = 1) {
+    return new Vector(this.pos.x + this.speed.x * time,this.pos.y + this.speed.y * time);
+  }
+  
+  handleObstacle() {
+    this.speed.x *= -1;
+    this.speed.y *= -1;
+  }
+  
+  act(time, field) {
+    if (!this.obstacleAt(field)) {
+      this.pos = this.getNextPosition(time)
+    }
+  }
+}
+
+class HorizontalFireball {
+
+}
+
+class VerticalFireball {
+
+}
+
+class FireRain {
+
+}
+
+class Coin {
+
+}
+
+class Player {
 
 }
 
