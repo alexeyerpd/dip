@@ -380,12 +380,18 @@ class Fireball extends Actor {
   }
 }
 
-class HorizontalFireball {
-
+class HorizontalFireball extends Fireball{
+  constructor(pos = new Vector(0,0)) {
+    super(pos, new Vector(1,1));
+    this.speed = new Vector(2,0)
+  }
 }
 
-class VerticalFireball {
-
+class VerticalFireball extends Fireball {
+  constructor(pos = new Vector(0,0)) {
+    super(pos, new Vector(1,1));
+    this.speed = new Vector(0,2)
+  }
 }
 
 class FireRain {
