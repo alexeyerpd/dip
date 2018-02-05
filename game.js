@@ -36,8 +36,10 @@ class Actor {
     } else { 
         throw new Error(''); 
     } 
+  }
 
-    this.act = function() {}; 
+  act() {
+
   } 
 
   get left() { 
