@@ -371,8 +371,11 @@ class Fireball extends Actor {
   }
   
   act(time, field) {
-    if (!this.obstacleAt(field)) {
+    let check = new Actor(this.getNextPosition(time))
+    if (!field.obstacleAt(check.pos, check.size)) {
       this.pos = this.getNextPosition(time)
+    } else {
+      this.handleObstacle();
     }
   }
 }
