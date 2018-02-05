@@ -394,8 +394,16 @@ class VerticalFireball extends Fireball {
   }
 }
 
-class FireRain {
+class FireRain extends Fireball{
+  constructor(pos = new Vector(0,0)) {
+    super(pos, new Vector(1,1));
+    this.save = pos
+    this.speed = new Vector(0,3)
+  }
 
+  handleObstacle() {
+    this.pos = this.save;
+  }
 }
 
 class Coin {
