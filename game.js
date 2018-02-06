@@ -38,9 +38,7 @@ class Actor {
     } 
   }
 
-  act() {
-
-  } 
+  act() {} 
 
   get left() { 
     return this.pos.x; 
@@ -416,6 +414,7 @@ class Coin extends Actor {
     this.spring = Math.random()*2*Math.PI;
     
   }
+
   get type() {
     return 'coin';
   }
@@ -438,8 +437,15 @@ class Coin extends Actor {
   }
 }
 
-class Player {
-
+class Player extends Actor{
+  constructor(pos) {
+    super(pos, new Vector(0.8, 1.5));
+    this.pos = this.pos.plus(new Vector(0, -0.5))
+  }
+  
+  get type() {
+    return 'player';
+  }
 }
 
 const grid = [
