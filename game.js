@@ -22,19 +22,19 @@ class Actor {
     if (pos instanceof Vector) { 
       this.pos = pos; 
     } else { 
-        throw new Error(''); 
+      throw new Error(''); 
     } 
 
     if (size instanceof Vector) { 
       this.size = size; 
     } else { 
-        throw new Error(''); 
+      throw new Error(''); 
     } 
 
     if (speed instanceof Vector) { 
       this.speed = speed; 
     } else { 
-        throw new Error(''); 
+      throw new Error(''); 
     } 
   }
 
@@ -60,26 +60,16 @@ class Actor {
     return 'actor'; 
   } 
 
-  isIntersect(moveObj) { 
+  isIntersect(moveObj) {
     if (!(moveObj instanceof Actor) || (moveObj === 'undefined')) { 
       throw new Error('исключение'); 
     } 
 
     if (this === moveObj) { 
       return false; 
-    } 
+    }
 
-    if (  (this.bottom === moveObj.top || this.top === moveObj.bottom) ||
-          (this.left === moveObj.right || this.right === moveObj.left)  ) { 
-      return false; 
-    } 
-
-    if (  (((this.left < moveObj.right) && (this.right > moveObj.left)) || ((this.top > moveObj.bottom) && (this.bottom < moveObj.top))) || 
-          (((this.left > moveObj.right) && (this.right < moveObj.left)) || ((this.top < moveObj.bottom) && (this.bottom > moveObj.top)))  ) { 
-      return true; 
-    } else { 
-        return false; 
-    } 
+    return Level.isObjectsIntersects(this, moveObj);
   } 
 } 
 
@@ -87,33 +77,29 @@ class Level {
   constructor(grid, actors) { 
     this.grid = grid; 
     this.actors = actors; 
-    this.player = this.checkPlayer(actors);  
+    this.player = this.checkPlayer(actors);
     this.height = this.checkHeight(grid);
-    this.width = this.checkLength(grid); 
-    this.status = null; 
-    this.finishDelay = 1; 
+    this.width = this.checkWidth(grid);
+    this.status = null;
+    this.finishDelay = 1;
   } 
 
-  checkLength(array) { 
-    if ( typeof array === 'undefined' ) {
+  checkWidth(array) {
+    if (typeof array === 'undefined' ) {
       return 0;
     }
-    let memo = []; 
-    
-    for (let i = 0; i < array.length; i++) { 
-      if (typeof array[i] === 'undefined') {
-        return array.length;
-      }
-      memo.push(array[i].length); 
+    let memo = [];
+    for (let i = 0; i < array.length; i++) {
+      memo.push(array[i] && array[i].length || 1);
     }
-    return Math.max.apply(null, memo); 
+    return Math.max(...memo);
   }
 
   checkHeight(array) {
     if (typeof array === 'undefined') {
       return 0;
     } else {
-        return array.length;
+      return array.length;
     }
   }
 
@@ -131,7 +117,6 @@ class Level {
     if (typeof actors === 'undefined') {
       return 'player';
     }
-    let memo = [];
     for (let i = 0; i < actors.length; i++) {
       if (actors[i].type === 'player') {
         return actors[i];
@@ -144,7 +129,7 @@ class Level {
     if (this.status !== null && this.finishDelay < 0) {
       return true;
     } else {
-        return false;
+      return false;
     }
   }
 
@@ -158,33 +143,31 @@ class Level {
       return undefined;
     }
 
+    let intersectOnce = false;
     for (let i = 0; i < this.actors.length; i++) {
-      if (this.actors[i] instanceof Actor && (moveObjActor !== this.actors[i])) { 
-        if ( ((moveObjActor.right < this.actors[i].left && moveObjActor.left < this.actors[i].left) ||
-             (moveObjActor.right > this.actors[i].right && moveObjActor.left > this.actors[i].right)) &&
-             ((moveObjActor.top  > this.actors[i].top && moveObjActor.bottom > this.actors[i].top) ||
-             (moveObjActor.top < this.actors[i].bottom && moveObjActor.bottom < this.actors[i].bottom)) ) {
-          return undefined;
+      if (this.actors[i] instanceof Actor && (moveObjActor !== this.actors[i])) {
+        if (Level.isObjectsIntersects(moveObjActor, this.actors[i])) {
+          intersectOnce = true;
+          break;
         }
-      }  
+      }
+    }
+    if (!intersectOnce) {
+      return undefined;
     }
 
+
     for (let i = 0; i < this.actors.length; i++) {
-      if (this.actors[i] instanceof Actor && (moveObjActor !== this.actors[i])) {   
-        if ( (moveObjActor.left < this.actors[i].right || moveObjActor.left === this.actors[i].left) &&
-             (moveObjActor.right > this.actors[i].left || moveObjActor.right === this.actors[i].right) &&
-             (moveObjActor.top > this.actors[i].bottom || moveObjActor.top === this.actors[i].top) && 
-             (moveObjActor.bottom < this.actors[i].top || moveObjActor.bottom === this.actors[i].bottom) ) {
+      if (this.actors[i] instanceof Actor && (moveObjActor !== this.actors[i])) {
+        if (Level.isObjectsIntersects(moveObjActor, this.actors[i])) {
           memo.push(this.actors[i]);
         }
-      }  
+      }
     }
 
-    if (memo.length === 1) {
+    if (memo.length >= 1) {
       return memo.shift();
-    } else if (memo.length > 1) {
-        return memo.shift();
-    } 
+    }
   }
 
   obstacleAt(movePos, sizeMovePos) {
@@ -193,30 +176,29 @@ class Level {
     }
     
     if (movePos.x < 0 || (movePos.x + sizeMovePos.x) > this.width || movePos.y < 0 || (movePos.y + sizeMovePos.y) > this.height ) {
-      if ((movePos.y + sizeMovePos.y) > this.height || movePos.y > this.height ) {
+      if ((movePos.y + sizeMovePos.y) > this.height) {
         return 'lava';
       } else {
-          return 'wall';
+        return 'wall';
       }
-    }  
+    }
+    let isCheckGrid = this.checkGrid(movePos, sizeMovePos);
     
-    let isCheckGrid = this.checkGrid(movePos, sizeMovePos)
-    
-    if (this.checkGrid) {
+    if (isCheckGrid) {
       return isCheckGrid;
     }
     
     let isActorAt = this.actorAt(new Actor(movePos, sizeMovePos));
     
-    if (typeof isActorAt !== 'undefined') {
+    if (typeof isActorAt !== 'undefined' && isActorAt.killable) {
       return isActorAt.type;
     } else {
-        return undefined;
+      return undefined;
     }
-  } 
+  }
 
-  checkGrid(arg1, arg2) {
-    if ((typeof arg1 === 'undefined') && (typeof arg2 === 'undefined')) {
+  checkGrid(pos, size) {
+    if ((typeof pos === 'undefined') && (typeof size === 'undefined')) {
       throw new Error('ошибка в checkGrid')
     }
     
@@ -226,22 +208,22 @@ class Level {
     for (let i = 0; i < this.height; i++) {
       for (let j = 0; j < this.width; j++) {
         if (this.grid[i][j] === 'lava') {
-          lava.push(new Vector(j,i));
+          lava.push(new Vector(j, i));
         }
         if (this.grid[i][j] === 'wall') {
           wall.push(new Vector(j, i))
         }
       } 
     }
-    
+
     for (let i = 0; i < wall.length; i++) {
-      if ( ((wall[i].x <= (arg1.x + arg2.x)) && (wall[i].x >= arg1.x)) && ((arg1.y <= wall[i].y) && (wall[i].y <= (arg1.y + arg2.y))) ) {
+      if (Level.isObjectsIntersects({ pos, size }, { pos: wall[i], size: new Vector(1, 1) })) {
         return "wall";
       }
     }
     
     for (let i = 0; i < lava.length; i++) {
-      if ( ((lava[i].x <= (arg1.x + arg2.x)) && (lava[i].x >= arg1.x)) && ((arg1.y <= lava[i].y) && (lava[i].y <= (arg1.y + arg2.y))) ) {
+      if (Level.isObjectsIntersects({ pos, size }, { pos: lava[i], size: new Vector(1, 1) })) {
         return "lava";
       }
     }
@@ -277,16 +259,60 @@ class Level {
       return;
     }
     
-    if (typeObstacle === 'lava' || typeObstacle ==='fireball') {
-      this.status = 'lost';
+    if (typeObstacle === 'lava' || typeObstacle === 'fireball') {
+      return (this.status = 'lost');
     }
-    
+
     if (typeObstacle === 'coin' && (touchedMoveObj.type === 'coin')) {
       this.actors.splice(this.actors.indexOf(touchedMoveObj), 1);
       if (this.noMoreActors('coin')) {
         this.status = 'won';
       }
     }
+  }
+
+
+  static contains( rect, point ) {
+    return rect[0].x < point.x && rect[1].x > point.x
+      && rect[0].y < point.y && rect[3].y > point.y;
+  }
+
+  static isObjectsIntersects( obj1, obj2) {
+    const getPoints = (obj) => {
+      return [
+        new Vector(obj.pos.x, obj.pos.y),
+        new Vector(obj.pos.x + obj.size.x, obj.pos.y),
+        new Vector(obj.pos.x + obj.size.x, obj.pos.y + obj.size.y),
+        new Vector(obj.pos.x, obj.pos.y + obj.size.y)
+      ];
+    };
+
+    let points1 = getPoints(obj1);
+    let points2 = getPoints(obj2);
+
+    const equals = (point1, point2) => {
+      return point1.x === point2.x && point1.y === point2.y;
+    };
+
+    const slideCheck = (points1, points2) => {
+      if (points1[0].x === points2[0].x && points1[3].x === points2[3].x
+        && points1[1].x === points2[1].x && points1[2].x === points2[2].x) {
+        return points1[2].y > points2[1].y && points1[1].y < points2[1].y
+          || points1[1].y < points2[2].y && points1[2].y > points2[2].y;
+      } else if (points1[0].y === points2[0].y && points1[1].y === points2[1].y
+        && points1[2].y === points2[2].y && points1[3].y === points2[3].y) {
+        return points1[0].x < points2[1].x && points2[1].x < points1[1].x
+          || points1[1].x > points2[0].x && points2[0].x > points1[0].x;
+      }
+    };
+
+    return points1.every((point1, index) => equals(point1, points2[index]))
+      || slideCheck(points1, points2)
+      || points2.some(point => {
+          return this.contains(points1, point);
+        }) || points1.some(point => {
+          return this.contains(points2, point);
+        });
   }
 }
 
@@ -309,7 +335,7 @@ class LevelParser {
   }
 
   createGrid(stringArray) {
-    let grid = []
+    let grid = [];
     for (let i = 0; i < stringArray.length; i++) {
       grid.push(stringArray[i].split(''));
       for (let j = 0; j < grid[i].length; j++) {
@@ -332,10 +358,10 @@ class LevelParser {
         } else if (Check === stringArray[i][j]) {
           act.push(Check);
         } else if (Check && typeof Check === 'function') {
-            let test = new Check(new Vector(j, i));
-            if (test instanceof Actor) {
-              act.push(test);
-            }
+          let test = new Check(new Vector(j, i));
+          if (test instanceof Actor) {
+            act.push(test);
+          }
         }
       }
     }
@@ -358,6 +384,10 @@ class Fireball extends Actor {
   get type() {
     return 'fireball';
   }
+
+  get killable () {
+    return true;
+  }
   
   getNextPosition(time = 1) {
     return new Vector(this.pos.x + this.speed.x * time,this.pos.y + this.speed.y * time);
@@ -368,10 +398,11 @@ class Fireball extends Actor {
     this.speed.y *= -1;
   }
   
-  act(time, field) {
-    let check = new Actor(this.getNextPosition(time))
-    if (!field.obstacleAt(check.pos, check.size)) {
-      this.pos = this.getNextPosition(time)
+  act (time, level) {
+    let newPos = this.getNextPosition(time);
+    let obstacle = level.obstacleAt(newPos, this.size);
+    if (!obstacle || obstacle === 'fireball') {
+      this.pos = newPos;
     } else {
       this.handleObstacle();
     }
@@ -411,8 +442,7 @@ class Coin extends Actor {
     this.save = new Vector(this.pos.x, this.pos.y);
     this.springSpeed = 8;
     this.springDist = 0.07;
-    this.spring = Math.random()*2*Math.PI;
-    
+    this.spring = Math.random() * 2 * Math.PI;
   }
 
   get type() {
@@ -437,7 +467,7 @@ class Coin extends Actor {
   }
 }
 
-class Player extends Actor{
+class Player extends Actor {
   constructor(pos) {
     super(pos, new Vector(0.8, 1.5));
     this.pos = this.pos.plus(new Vector(0, -0.5))
@@ -448,9 +478,21 @@ class Player extends Actor{
   }
 }
 
-const grid = [
-  new Array(3),
-  ['wall', 'wall', 'lava']
-];
-const level = new Level(grid);
-runLevel(level, DOMDisplay);
+loadLevels().then(text => {
+  return JSON.parse(text);
+}).then(schemas => {
+  const actorDict = {
+    'x': 'wall',
+    '!': 'lava',
+    '@': Player,
+    'o': Coin,
+    '=': HorizontalFireball,
+    '|': VerticalFireball,
+    'v': FireRain,
+  }
+  const parser = new LevelParser(actorDict);
+  return runGame(schemas, parser, DOMDisplay);
+}).then(status => {
+  alert('You won');
+});
+
