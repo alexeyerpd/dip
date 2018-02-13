@@ -12,7 +12,7 @@ class Vector {
     return new Vector(this.x + obj.x, this.y + obj.y);
   }
   
-  times(factor = 1) {
+  times(factor) {
     return new Vector(this.x * factor, this.y * factor);
   }
 }
@@ -22,19 +22,19 @@ class Actor {
     if (pos instanceof Vector) { 
       this.pos = pos; 
     } else { 
-      throw new Error(''); 
+      throw new Error('Свойство pos не является вектором'); 
     } 
 
     if (size instanceof Vector) { 
       this.size = size; 
     } else { 
-      throw new Error(''); 
+      throw new Error('Свойство size не является вектором'); 
     } 
 
     if (speed instanceof Vector) { 
       this.speed = speed; 
     } else { 
-      throw new Error(''); 
+      throw new Error('Свойство speed не является вектором'); 
     } 
   }
 
@@ -62,7 +62,7 @@ class Actor {
 
   isIntersect(moveObj) {
     if (!(moveObj instanceof Actor) || (moveObj === 'undefined')) { 
-      throw new Error('исключение'); 
+      throw new Error(`Объект ${moveObj} не является экземпляром класса Actor`); 
     } 
 
     if (this === moveObj) { 
@@ -88,11 +88,10 @@ class Level {
     if (typeof array === 'undefined' ) {
       return 0;
     }
-    let memo = [];
-    for (let i = 0; i < array.length; i++) {
-      memo.push(array[i] && array[i].length || 1);
-    }
-    return Math.max(...memo);
+  
+    return Math.max(...array.map(cell => {
+      return cell && cell.length || 1;
+    }));
   }
 
   checkHeight(array) {
@@ -104,22 +103,18 @@ class Level {
   }
 
   isActors(array) {
-    let memo = [];
-    for (let i = 0; i < array.length; i++) {  
-      if (array[i] instanceof Actor) { 
-        memo.push(array[i]); 
-      } 
-    }
-    return memo;
+    return array.filter(actor => {
+      return actor instanceof Actor
+    });
   }
   
   checkPlayer(actors) {
     if (typeof actors === 'undefined') {
       return 'player';
     }
-    for (let i = 0; i < actors.length; i++) {
-      if (actors[i].type === 'player') {
-        return actors[i];
+    for (let actor of actors) {
+      if (actor.type === 'player') {
+        return actor;
       }
     }
     return 'player';
@@ -134,9 +129,9 @@ class Level {
   }
 
   actorAt(moveObjActor) {
-    let memo = [];
+    let forIntersectObj = [];
     if ( !(moveObjActor instanceof Actor) || (typeof moveObjActor === 'undefined') ) {
-      throw new Error('ошибка в moveObjActor')
+      throw new Error(`${moveObjActor} не является движущимся объектом класса Actor`)
     }
 
     if (typeof this.actors === 'undefined' || this.actors.length === 1) {
@@ -144,9 +139,9 @@ class Level {
     }
 
     let intersectOnce = false;
-    for (let i = 0; i < this.actors.length; i++) {
-      if (this.actors[i] instanceof Actor && (moveObjActor !== this.actors[i])) {
-        if (Level.isObjectsIntersects(moveObjActor, this.actors[i])) {
+    for (let actor of this.actors) {
+      if (actor instanceof Actor && (moveObjActor !== actor)) {
+        if (Level.isObjectsIntersects(moveObjActor, actor)) {
           intersectOnce = true;
           break;
         }
@@ -156,23 +151,22 @@ class Level {
       return undefined;
     }
 
-
-    for (let i = 0; i < this.actors.length; i++) {
-      if (this.actors[i] instanceof Actor && (moveObjActor !== this.actors[i])) {
-        if (Level.isObjectsIntersects(moveObjActor, this.actors[i])) {
-          memo.push(this.actors[i]);
+    for (let actor of this.actors) {
+      if (actor instanceof Actor && (moveObjActor !== actor)) {
+        if (Level.isObjectsIntersects(moveObjActor, actor)) {
+          forIntersectObj.push(actor);
         }
       }
     }
 
-    if (memo.length >= 1) {
-      return memo.shift();
+    if (forIntersectObj.length >= 1) {
+      return forIntersectObj.shift();
     }
   }
 
   obstacleAt(movePos, sizeMovePos) {
     if ( !(movePos instanceof Vector) && !(sizeMovePos instanceof Vector) ) {
-      throw new Error('Ошибка в obstacleAt');
+      throw new Error(`${movePos} и ${sizeMovePos} не является вектором`);
     }
     
     if (movePos.x < 0 || (movePos.x + sizeMovePos.x) > this.width || movePos.y < 0 || (movePos.y + sizeMovePos.y) > this.height ) {
@@ -182,14 +176,13 @@ class Level {
         return 'wall';
       }
     }
+
     let isCheckGrid = this.checkGrid(movePos, sizeMovePos);
-    
     if (isCheckGrid) {
       return isCheckGrid;
     }
     
     let isActorAt = this.actorAt(new Actor(movePos, sizeMovePos));
-    
     if (typeof isActorAt !== 'undefined' && isActorAt.killable) {
       return isActorAt.type;
     } else {
@@ -199,12 +192,11 @@ class Level {
 
   checkGrid(pos, size) {
     if ((typeof pos === 'undefined') && (typeof size === 'undefined')) {
-      throw new Error('ошибка в checkGrid')
+      throw new Error('В checkGrid не определены позиция и размер')
     }
     
     let lava = [];
     let wall = [];
-    
     for (let i = 0; i < this.height; i++) {
       for (let j = 0; j < this.width; j++) {
         if (this.grid[i][j] === 'lava') {
@@ -216,14 +208,14 @@ class Level {
       } 
     }
 
-    for (let i = 0; i < wall.length; i++) {
-      if (Level.isObjectsIntersects({ pos, size }, { pos: wall[i], size: new Vector(1, 1) })) {
+    for (let cell of wall) {
+      if (Level.isObjectsIntersects({ pos, size }, { pos: cell, size: new Vector(1, 1) })) {
         return "wall";
       }
     }
     
-    for (let i = 0; i < lava.length; i++) {
-      if (Level.isObjectsIntersects({ pos, size }, { pos: lava[i], size: new Vector(1, 1) })) {
+    for (let cell of lava) {
+      if (Level.isObjectsIntersects({ pos, size }, { pos: cell, size: new Vector(1, 1) })) {
         return "lava";
       }
     }
@@ -239,15 +231,17 @@ class Level {
     if (typeof this.actors === 'undefined') {
       return true;
     }
-    let memo = [];
-    for (let i = 0; i < this.actors.length; i++) {
-      if (this.actors[i] instanceof Actor) { 
-        if (this.actors[i].type === typeActor) {
-          memo.push(this.actors[i].type.includes(typeActor));
+    
+    let hasActor = [];
+    for (let actor of this.actors) {
+      if (actor instanceof Actor) { 
+        if (actor.type === typeActor) {
+          hasActor.push(actor.type.includes(typeActor));
         }
       }
     }
-    if (memo.length === 0) {
+    
+    if (hasActor.length === 0) {
       return true;
     } else {
       return false;
@@ -271,7 +265,6 @@ class Level {
     }
   }
 
-
   static contains( rect, point ) {
     return rect[0].x < point.x && rect[1].x > point.x
       && rect[0].y < point.y && rect[3].y > point.y;
@@ -287,31 +280,31 @@ class Level {
       ];
     };
 
-    let points1 = getPoints(obj1);
-    let points2 = getPoints(obj2);
+    let pointsInObj1 = getPoints(obj1);
+    let pointsInObj2 = getPoints(obj2);
 
     const equals = (point1, point2) => {
       return point1.x === point2.x && point1.y === point2.y;
     };
 
-    const slideCheck = (points1, points2) => {
-      if (points1[0].x === points2[0].x && points1[3].x === points2[3].x
-        && points1[1].x === points2[1].x && points1[2].x === points2[2].x) {
-        return points1[2].y > points2[1].y && points1[1].y < points2[1].y
-          || points1[1].y < points2[2].y && points1[2].y > points2[2].y;
-      } else if (points1[0].y === points2[0].y && points1[1].y === points2[1].y
-        && points1[2].y === points2[2].y && points1[3].y === points2[3].y) {
-        return points1[0].x < points2[1].x && points2[1].x < points1[1].x
-          || points1[1].x > points2[0].x && points2[0].x > points1[0].x;
+    const slideCheck = (pointsInObj1, pointsInObj2) => {
+      if (pointsInObj1[0].x === pointsInObj2[0].x && pointsInObj1[3].x === pointsInObj2[3].x
+        && pointsInObj1[1].x === pointsInObj2[1].x && pointsInObj1[2].x === pointsInObj2[2].x) {
+        return pointsInObj1[2].y > pointsInObj2[1].y && pointsInObj1[1].y < pointsInObj2[1].y
+          || pointsInObj1[1].y < pointsInObj2[2].y && pointsInObj1[2].y > pointsInObj2[2].y;
+      } else if (pointsInObj1[0].y === pointsInObj2[0].y && pointsInObj1[1].y === pointsInObj2[1].y
+        && pointsInObj1[2].y === pointsInObj2[2].y && pointsInObj1[3].y === pointsInObj2[3].y) {
+        return pointsInObj1[0].x < pointsInObj2[1].x && pointsInObj2[1].x < pointsInObj1[1].x
+          || pointsInObj1[1].x > pointsInObj2[0].x && pointsInObj2[0].x > pointsInObj1[0].x;
       }
     };
 
-    return points1.every((point1, index) => equals(point1, points2[index]))
-      || slideCheck(points1, points2)
-      || points2.some(point => {
-          return this.contains(points1, point);
-        }) || points1.some(point => {
-          return this.contains(points2, point);
+    return pointsInObj1.every((point1, index) => equals(point1, pointsInObj2[index]))
+      || slideCheck(pointsInObj1, pointsInObj2)
+      || pointsInObj2.some(point => {
+          return this.contains(pointsInObj1, point);
+        }) || pointsInObj1.some(point => {
+          return this.contains(pointsInObj2, point);
         });
   }
 }
@@ -373,7 +366,6 @@ class LevelParser {
     let actor = this.createActors(stringArray);
     return new Level(grid, actor);
   }
-
 }
 
 class Fireball extends Actor {
@@ -495,4 +487,3 @@ loadLevels().then(text => {
 }).then(status => {
   alert('You won');
 });
-
