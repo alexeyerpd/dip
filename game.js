@@ -300,7 +300,7 @@ class LevelParser {
     stringArray.forEach((str, y) => {
       str.split('').forEach((symbol, x) => {
         let Check = this.actorFromSymbol(symbol)
-        if (Check === Actor && typeof Check === 'function') {  
+        if (Check === Actor) {  
           act.push(new Check(new Vector(x, y)));
         } else if (Check === symbol) {
           act.push(Check);
