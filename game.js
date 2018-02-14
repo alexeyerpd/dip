@@ -300,18 +300,17 @@ class LevelParser {
     stringArray.forEach((str, y) => {
       str.split('').forEach((symbol, x) => {
         let Check = this.actorFromSymbol(symbol)
-      
         if (Check === Actor && typeof Check === 'function') {  
           act.push(new Check(new Vector(x, y)));
         } else if (Check === symbol) {
           act.push(Check);
         } else if (Check && typeof Check === 'function') {
-          let test = new Check(new Vector(x, y));
-          if (test instanceof Actor) {
-            act.push(test);
+          let exemplar = new Check(new Vector(x, y));
+          if (exemplar instanceof Actor) {
+            act.push(exemplar);
           }
         }
-        })
+      })
     })
     return act
   }
