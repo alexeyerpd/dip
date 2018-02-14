@@ -138,33 +138,17 @@ class Level {
       return undefined;
     }
 
-    let intersectOnce = false;
-    for (let actor of this.actors) {
-      if (actor instanceof Actor && (moveObjActor !== actor)) {
-        if (Level.isObjectsIntersects(moveObjActor, actor)) {
-          intersectOnce = true;
-          break;
+    return this.actors.map(actor => {
+      if (actor instanceof Actor) {
+        if (actor.isIntersect(moveObjActor)) {
+          return actor
         }
-      }
-    }
-    if (!intersectOnce) {
-      return undefined;
-    }
-
-    for (let actor of this.actors) {
-      if (actor instanceof Actor && (moveObjActor !== actor)) {
-        if (Level.isObjectsIntersects(moveObjActor, actor)) {
-          forIntersectObj.push(actor);
-        }
-      }
-    }
-
-    if (forIntersectObj.length >= 1) {
-      return forIntersectObj.shift();
-    }
+      }  
+    }).filter(el => el !== undefined).shift()
   }
 
   obstacleAt(movePos, sizeMovePos) {
+
     if ( !(movePos instanceof Vector) && !(sizeMovePos instanceof Vector) ) {
       throw new Error(`${movePos} и ${sizeMovePos} не является вектором`);
     }
@@ -177,47 +161,23 @@ class Level {
       }
     }
 
-    let isCheckGrid = this.checkGrid(movePos, sizeMovePos);
-    if (isCheckGrid) {
-      return isCheckGrid;
+    for (let i = Math.floor(movePos.y); i < Math.ceil(movePos.y + sizeMovePos.y); i++) {
+      for (let j = Math.floor(movePos.x); j < Math.ceil(movePos.x + sizeMovePos.x); j++) {
+        if (this.grid[i][j] === 'lava') {
+          return 'lava'
+        }
+        if (this.grid[i][j] === 'wall') {
+          return 'wall'
+        }
+      }
     }
     
     let isActorAt = this.actorAt(new Actor(movePos, sizeMovePos));
+    
     if (typeof isActorAt !== 'undefined' && isActorAt.killable) {
       return isActorAt.type;
     } else {
       return undefined;
-    }
-  }
-
-  checkGrid(pos, size) {
-    if ((typeof pos === 'undefined') && (typeof size === 'undefined')) {
-      throw new Error('В checkGrid не определены позиция и размер')
-    }
-    
-    let lava = [];
-    let wall = [];
-    for (let i = 0; i < this.height; i++) {
-      for (let j = 0; j < this.width; j++) {
-        if (this.grid[i][j] === 'lava') {
-          lava.push(new Vector(j, i));
-        }
-        if (this.grid[i][j] === 'wall') {
-          wall.push(new Vector(j, i))
-        }
-      } 
-    }
-
-    for (let cell of wall) {
-      if (Level.isObjectsIntersects({ pos, size }, { pos: cell, size: new Vector(1, 1) })) {
-        return "wall";
-      }
-    }
-    
-    for (let cell of lava) {
-      if (Level.isObjectsIntersects({ pos, size }, { pos: cell, size: new Vector(1, 1) })) {
-        return "lava";
-      }
     }
   }
 
@@ -328,30 +288,25 @@ class LevelParser {
   }
 
   createGrid(stringArray) {
-    let grid = [];
-    for (let i = 0; i < stringArray.length; i++) {
-      grid.push(stringArray[i].split(''));
-      for (let j = 0; j < grid[i].length; j++) {
-        grid[i][j] = this.obstacleFromSymbol(grid[i][j]);
-      }
-    }
-    return grid;
+    return stringArray.map((string, indX) => {
+      return string.split('').map((cell, indY) => {
+        return this.obstacleFromSymbol(cell)
+      })
+    });
   }
 
   createActors(stringArray) {
     let act = [];
 
-    for (let i = 0; i < stringArray.length; i++) { // i = y
-      for (let j = 0; j < stringArray[i].length; j++ ) {
-
-        let Check = this.actorFromSymbol(stringArray[i][j]);
-
+    for (let y = 0; y < stringArray.length; y++) {
+      for (let x = 0; x < stringArray[y].length; x++ ) {
+        let Check = this.actorFromSymbol(stringArray[y][x]);
         if (Check === Actor && typeof Check === 'function') {  
-          act.push(new Check(new Vector(j, i)));
-        } else if (Check === stringArray[i][j]) {
+          act.push(new Check(new Vector(x, y)));
+        } else if (Check === stringArray[y][x]) {
           act.push(Check);
         } else if (Check && typeof Check === 'function') {
-          let test = new Check(new Vector(j, i));
+          let test = new Check(new Vector(x, y));
           if (test instanceof Actor) {
             act.push(test);
           }
