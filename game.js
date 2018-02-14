@@ -297,13 +297,13 @@ class LevelParser {
 
   createActors(stringArray) {
     let act = [];
-
-    for (let y = 0; y < stringArray.length; y++) {
-      for (let x = 0; x < stringArray[y].length; x++ ) {
-        let Check = this.actorFromSymbol(stringArray[y][x]);
+    stringArray.forEach((str, y) => {
+      str.split('').forEach((symbol, x) => {
+        let Check = this.actorFromSymbol(symbol)
+      
         if (Check === Actor && typeof Check === 'function') {  
           act.push(new Check(new Vector(x, y)));
-        } else if (Check === stringArray[y][x]) {
+        } else if (Check === symbol) {
           act.push(Check);
         } else if (Check && typeof Check === 'function') {
           let test = new Check(new Vector(x, y));
@@ -311,9 +311,9 @@ class LevelParser {
             act.push(test);
           }
         }
-      }
-    }
-    return act;
+        })
+    })
+    return act
   }
 
   parse(stringArray) {
