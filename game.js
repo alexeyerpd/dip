@@ -69,7 +69,51 @@ class Actor {
       return false; 
     }
 
-    return Level.isObjectsIntersects(this, moveObj);
+    return this.isObjectsIntersects(this, moveObj);
+  }
+
+  contains( rect, point ) {
+    return rect[0].x < point.x && rect[1].x > point.x
+      && rect[0].y < point.y && rect[3].y > point.y;
+  }
+
+  isObjectsIntersects( obj1, obj2) {
+    const getPoints = (obj) => {
+      return [
+        new Vector(obj.pos.x, obj.pos.y),
+        new Vector(obj.pos.x + obj.size.x, obj.pos.y),
+        new Vector(obj.pos.x + obj.size.x, obj.pos.y + obj.size.y),
+        new Vector(obj.pos.x, obj.pos.y + obj.size.y)
+      ];
+    };
+
+    let pointsInObj1 = getPoints(obj1);
+    let pointsInObj2 = getPoints(obj2);
+
+    const equals = (point1, point2) => {
+      return point1.x === point2.x && point1.y === point2.y;
+    };
+
+    const isObjectsIntersected = (pointsInObj1, pointsInObj2) => {
+      if (pointsInObj1[0].x === pointsInObj2[0].x && pointsInObj1[3].x === pointsInObj2[3].x
+        && pointsInObj1[1].x === pointsInObj2[1].x && pointsInObj1[2].x === pointsInObj2[2].x) {
+        return pointsInObj1[2].y > pointsInObj2[1].y && pointsInObj1[1].y < pointsInObj2[1].y
+          || pointsInObj1[1].y < pointsInObj2[2].y && pointsInObj1[2].y > pointsInObj2[2].y;
+      } else if (pointsInObj1[0].y === pointsInObj2[0].y && pointsInObj1[1].y === pointsInObj2[1].y
+        && pointsInObj1[2].y === pointsInObj2[2].y && pointsInObj1[3].y === pointsInObj2[3].y) {
+        return pointsInObj1[0].x < pointsInObj2[1].x && pointsInObj2[1].x < pointsInObj1[1].x
+          || pointsInObj1[1].x > pointsInObj2[0].x && pointsInObj2[0].x > pointsInObj1[0].x;
+      }
+    };
+
+    return pointsInObj1.every((point1, index) => equals(point1, pointsInObj2[index]))
+      || isObjectsIntersected(pointsInObj1, pointsInObj2)
+      || pointsInObj2.some(point => {
+          return this.contains(pointsInObj1, point);
+        }) 
+      || pointsInObj1.some(point => {
+          return this.contains(pointsInObj2, point);
+        });
   } 
 } 
 
@@ -104,7 +148,7 @@ class Level {
 
   isActors(array) {
     return array.filter(actor => {
-      return actor instanceof Actor
+      return actor instanceof Actor;
     });
   }
   
@@ -131,7 +175,7 @@ class Level {
   actorAt(moveObjActor) {
     let forIntersectObj = [];
     if ( !(moveObjActor instanceof Actor) || (typeof moveObjActor === 'undefined') ) {
-      throw new Error(`${moveObjActor} не является движущимся объектом класса Actor`)
+      throw new Error(`${moveObjActor} не является движущимся объектом класса Actor`);
     }
 
     if (typeof this.actors === 'undefined' || this.actors.length === 1) {
@@ -141,10 +185,10 @@ class Level {
     return this.actors.map(actor => {
       if (actor instanceof Actor) {
         if (actor.isIntersect(moveObjActor)) {
-          return actor
+          return actor;
         }
       }  
-    }).filter(el => el !== undefined).shift()
+    }).filter(el => el !== undefined).shift();
   }
 
   obstacleAt(movePos, sizeMovePos) {
@@ -164,10 +208,10 @@ class Level {
     for (let i = Math.floor(movePos.y); i < Math.ceil(movePos.y + sizeMovePos.y); i++) {
       for (let j = Math.floor(movePos.x); j < Math.ceil(movePos.x + sizeMovePos.x); j++) {
         if (this.grid[i][j] === 'lava') {
-          return 'lava'
+          return 'lava';
         }
         if (this.grid[i][j] === 'wall') {
-          return 'wall'
+          return 'wall';
         }
       }
     }
@@ -224,49 +268,6 @@ class Level {
       }
     }
   }
-
-  static contains( rect, point ) {
-    return rect[0].x < point.x && rect[1].x > point.x
-      && rect[0].y < point.y && rect[3].y > point.y;
-  }
-
-  static isObjectsIntersects( obj1, obj2) {
-    const getPoints = (obj) => {
-      return [
-        new Vector(obj.pos.x, obj.pos.y),
-        new Vector(obj.pos.x + obj.size.x, obj.pos.y),
-        new Vector(obj.pos.x + obj.size.x, obj.pos.y + obj.size.y),
-        new Vector(obj.pos.x, obj.pos.y + obj.size.y)
-      ];
-    };
-
-    let pointsInObj1 = getPoints(obj1);
-    let pointsInObj2 = getPoints(obj2);
-
-    const equals = (point1, point2) => {
-      return point1.x === point2.x && point1.y === point2.y;
-    };
-
-    const slideCheck = (pointsInObj1, pointsInObj2) => {
-      if (pointsInObj1[0].x === pointsInObj2[0].x && pointsInObj1[3].x === pointsInObj2[3].x
-        && pointsInObj1[1].x === pointsInObj2[1].x && pointsInObj1[2].x === pointsInObj2[2].x) {
-        return pointsInObj1[2].y > pointsInObj2[1].y && pointsInObj1[1].y < pointsInObj2[1].y
-          || pointsInObj1[1].y < pointsInObj2[2].y && pointsInObj1[2].y > pointsInObj2[2].y;
-      } else if (pointsInObj1[0].y === pointsInObj2[0].y && pointsInObj1[1].y === pointsInObj2[1].y
-        && pointsInObj1[2].y === pointsInObj2[2].y && pointsInObj1[3].y === pointsInObj2[3].y) {
-        return pointsInObj1[0].x < pointsInObj2[1].x && pointsInObj2[1].x < pointsInObj1[1].x
-          || pointsInObj1[1].x > pointsInObj2[0].x && pointsInObj2[0].x > pointsInObj1[0].x;
-      }
-    };
-
-    return pointsInObj1.every((point1, index) => equals(point1, pointsInObj2[index]))
-      || slideCheck(pointsInObj1, pointsInObj2)
-      || pointsInObj2.some(point => {
-          return this.contains(pointsInObj1, point);
-        }) || pointsInObj1.some(point => {
-          return this.contains(pointsInObj2, point);
-        });
-  }
 }
 
 class LevelParser {
@@ -290,8 +291,8 @@ class LevelParser {
   createGrid(stringArray) {
     return stringArray.map((string, indX) => {
       return string.split('').map((cell, indY) => {
-        return this.obstacleFromSymbol(cell)
-      })
+        return this.obstacleFromSymbol(cell);
+      });
     });
   }
 
@@ -356,22 +357,22 @@ class Fireball extends Actor {
 class HorizontalFireball extends Fireball{
   constructor(pos = new Vector(0,0)) {
     super(pos, new Vector(1,1));
-    this.speed = new Vector(2,0)
+    this.speed = new Vector(2,0);
   }
 }
 
 class VerticalFireball extends Fireball {
   constructor(pos = new Vector(0,0)) {
     super(pos, new Vector(1,1));
-    this.speed = new Vector(0,2)
+    this.speed = new Vector(0,2);
   }
 }
 
 class FireRain extends Fireball{
   constructor(pos = new Vector(0,0)) {
     super(pos, new Vector(1,1));
-    this.savePos = pos
-    this.speed = new Vector(0,3)
+    this.savePos = pos;
+    this.speed = new Vector(0,3);
   }
 
   handleObstacle() {
@@ -403,7 +404,7 @@ class Coin extends Actor {
 
   getNextPosition(time = 1) {
     this.updateSpring(time);
-    return new Vector(this.pos.x, this.save.y + this.getSpringVector().y)
+    return new Vector(this.pos.x, this.save.y + this.getSpringVector().y);
   }
 
   act(time) {
@@ -414,7 +415,7 @@ class Coin extends Actor {
 class Player extends Actor {
   constructor(pos) {
     super(pos, new Vector(0.8, 1.5));
-    this.pos = this.pos.plus(new Vector(0, -0.5))
+    this.pos = this.pos.plus(new Vector(0, -0.5));
   }
   
   get type() {
@@ -433,7 +434,7 @@ loadLevels().then(text => {
     '=': HorizontalFireball,
     '|': VerticalFireball,
     'v': FireRain,
-  }
+  };
   const parser = new LevelParser(actorDict);
   return runGame(schemas, parser, DOMDisplay);
 }).then(status => {
