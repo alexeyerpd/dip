@@ -296,23 +296,21 @@ class LevelParser {
   }
 
   createActors(stringArray) {
-    let act = [];
-    stringArray.forEach((str, y) => {
-      str.split('').forEach((symbol, x) => {
-        let Check = this.actorFromSymbol(symbol)
-        if (Check === Actor) {  
-          act.push(new Check(new Vector(x, y)));
-        } else if (Check === symbol) {
-          act.push(Check);
-        } else if (Check && typeof Check === 'function') {
-          let exemplar = new Check(new Vector(x, y));
+    return (stringArray.map((grid, indexY) => {
+      return grid.split('').map((symbol, indexX) => {
+        let Check = this.actorFromSymbol(symbol);
+        if (Check === Actor) {
+          return  new Check(new Vector(indexX, indexY));
+        } else if (symbol && typeof Check === 'function') {
+          let exemplar = new Check(new Vector(indexX, indexY));
           if (exemplar instanceof Actor) {
-            act.push(exemplar);
-          }
+            return exemplar;
+          } 
         }
-      })
-    })
-    return act
+      }).filter(check => typeof check !== 'undefined');
+    })).reduce((memoryArray, el) => {
+      return memoryArray.concat(el);
+    }, []);
   }
 
   parse(stringArray) {
